@@ -13,31 +13,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const purchase = await prisma.purchase.findUnique({
+    const order = await prisma.order.findFirst({
       where: { transactionId },
     });
 
-    if (!purchase) {
+    if (!order) {
       return NextResponse.json(
-        { error: 'Purchase not found' },
+        { error: 'Order not found' },
         { status: 404 }
       );
     }
 
-    if (purchase.userId !== userId) {
+    if (order.userId !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    await prisma.purchase.update({
-      where: { transactionId },
-      data: { status: 'refund_requested' },
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'refunded' },
     });
 
     const BOT_TOKEN = process.env.BOT_TOKEN;
-    if (BOT_TOKEN) {
+    if (BOT_TOKEN && order.telegramChargeId) {
       await fetch(
         `https://api.telegram.org/bot${BOT_TOKEN}/refundStarPayment`,
         {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user_id: parseInt(userId),
-            telegram_payment_charge_id: purchase.telegramChargeId,
+            telegram_payment_charge_id: order.telegramChargeId,
           }),
         }
       ).catch((e) => {

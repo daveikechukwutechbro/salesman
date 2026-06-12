@@ -14,11 +14,18 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const purchase = await prisma.purchase.findUnique({
-      where: { transactionId },
+    const order = await prisma.order.findFirst({
+      where: {
+        transactionId,
+        items: {
+          some: {
+            productId: itemId,
+          },
+        },
+      },
     });
 
-    if (!purchase || purchase.itemId !== itemId) {
+    if (!order) {
       return NextResponse.json(
         { error: 'Purchase not found' },
         { status: 404 }
