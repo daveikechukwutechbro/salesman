@@ -402,7 +402,7 @@ export default function Home() {
             >
               ← Back to Orders
             </button>
-            <OrderCard order={selectedOrder} onPress={(_o) => setShowReceipt(true)} />
+            <OrderCard order={selectedOrder} onPress={() => setShowReceipt(true)} />
             <button
               onClick={() => setShowReceipt(true)}
               className="w-full py-3 rounded-xl tg-button text-base font-semibold mt-4 cursor-pointer"
