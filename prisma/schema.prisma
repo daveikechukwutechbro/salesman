@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+model User {
+  id            String     @id @default(cuid())
+  telegramId    String     @unique
+  firstName     String?
+  lastName      String?
+  username      String?
+  phone         String?
+  address       String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  orders        Order[]
+  cartItems     CartItem[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  icon        String?
+  image       String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  products    Product[]
+
+  @@index([sortOrder])
+}
+
+model Product {
+  id           String     @id @default(cuid())
+  slug         String     @unique
+  name         String
+  description  String
+  price        Int
+  comparePrice Int?
+  image        String?
+  images       String[]
+  stock        Int        @default(0)
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id])
+  featured     Boolean    @default(false)
+  rating       Float      @default(0)
+  reviewCount  Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  orderItems   OrderItem[]
+  cartItems    CartItem[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([featured])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model Order {
+  id               String       @id @default(cuid())
+  orderNumber      String       @unique
+  userId           String
+  user             User         @relation(fields: [userId], references: [id])
+  status           OrderStatus  @default(pending)
+  totalAmount      Int
+  shippingAddress  String?
+  phone            String?
+  note             String?
+  transactionId    String?      @unique
+  telegramChargeId String?
+  estimatedDelivery DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  items            OrderItem[]
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([userId, status])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  price     Int
+  quantity  Int
+  image     String?
+
+  @@index([orderId])
+}
